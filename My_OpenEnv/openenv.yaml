@@ -1,0 +1,151 @@
+# OpenEnv Environment Configuration - Stochastic Grid World
+# This file defines a stochastic grid navigation environment with randomized obstacles and targets
+
+class: "env.environment:StochasticGridEnvironment"
+version: "2.0.0"
+
+name: "Stochastic Robot Navigation Environment"
+description: "A stochastic grid world environment with randomized obstacle positions, configurable difficulty levels, and reproducible episodes via seeding"
+
+# Stochastic parameters
+stochastic_params:
+  enabled: true
+  description: "Environment uses stochastically generated obstacles and targets"
+  
+  # Difficulty-based distributions
+  difficulties:
+    easy:
+      obstacle_density: 0.10
+      num_obstacles: 5
+      target_min_distance: 5
+      target_max_distance: 15
+      description: "Low obstacle density - lots of open space, easy escape routes"
+      obstacle_distribution: "uniform_random"
+      max_steps: 150
+      
+    medium:
+      obstacle_density: 0.25
+      num_obstacles: 15
+      target_min_distance: 8
+      target_max_distance: null
+      description: "Moderate obstacle density - significant planning required"
+      obstacle_distribution: "stratified_random"
+      max_steps: 200
+      
+    hard:
+      obstacle_density: 0.40
+      num_obstacles: 30
+      target_min_distance: 10
+      target_max_distance: null
+      description: "High obstacle density - tight corridors, challenging navigation"
+      obstacle_distribution: "clustered_random"
+      max_steps: 150
+
+# Action schema
+action_schema:
+  type: "object"
+  properties:
+    direction:
+      type: "string"
+      enum: ["up", "down", "left", "right"]
+      description: "Direction to move"
+    magnitude:
+      type: "number"
+      minimum: 0.0
+      maximum: 1.0
+      description: "Strength of action (0.0 to 1.0)"
+  required: ["direction", "magnitude"]
+
+# Observation schema - Enhanced with stochastic info
+observation_schema:
+  type: "object"
+  properties:
+    agent_position:
+      type: "array"
+      items: { type: "integer" }
+      description: "Current [x, y] position"
+    target_position:
+      type: "array"
+      items: { type: "integer" }
+      description: "Stochastically placed target [x, y] position"
+    distance_to_target:
+      type: "integer"
+      description: "Manhattan distance to target"
+    obstacles:
+      type: "array"
+      items:
+        type: "array"
+        items: { type: "integer" }
+      description: "Stochastically generated obstacle positions"
+    step_count:
+      type: "integer"
+      description: "Steps taken in current episode"
+    episode_reward:
+      type: "number"
+      description: "Cumulative reward in episode"
+    grid_size:
+      type: "integer"
+      description: "Grid size"
+    difficulty:
+      type: "string"
+      enum: ["easy", "medium", "hard"]
+      description: "Difficulty level controlling obstacle density"
+    episode_seed:
+      type: ["integer", "null"]
+      description: "Seed used for this episode (for reproducibility)"
+
+# Task definitions - Enhanced with stochastic parameters
+tasks:
+  - name: "easy_navigation"
+    description: "Navigate to nearby target with minimal obstacles"
+    difficulty: 1
+    max_steps: 150
+    stochastic_features:
+      obstacle_density: 0.10
+      num_obstacles: 5
+      target_min_distance: 5
+      randomization: "per-episode"
+      reproducible: true
+    
+  - name: "medium_navigation"
+    description: "Navigate through moderate obstacles with planning"
+    difficulty: 2
+    max_steps: 200
+    stochastic_features:
+      obstacle_density: 0.25
+      num_obstacles: 15
+      target_min_distance: 8
+      randomization: "per-episode"
+      reproducible: true
+    
+  - name: "hard_navigation"
+    description: "Navigate through dense obstacles with time pressure"
+    difficulty: 3
+    max_steps: 150
+    stochastic_features:
+      obstacle_density: 0.40
+      num_obstacles: 30
+      target_min_distance: 10
+      randomization: "per-episode"
+      reproducible: true
+
+# Metadata
+metadata:
+  domain: "robotics"
+  task_type: "navigation"
+  reward_range: [0.0, 10.0]
+  action_space: "discrete"
+  observation_space: "mixed"
+  entry_point: "env.environment:StochasticGridEnvironment"
+  
+  # Stochastic environment metadata
+  stochasticity:
+    type: "environment initialization"
+    controllable: true
+    reproducible: true
+    seed_based: true
+    description: "Obstacles and targets are stochastically generated per episode, but reproducible with seeds"
+  
+  # Backward compatibility
+  compatibility:
+    legacy: "MyOpenEnvEnvironment wrapper available for backward compatibility"
