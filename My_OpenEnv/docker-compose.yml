@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  openenv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openenv
+    env_file:
+      - .env.submission
+    ports:
+      - "7860:7860"
+    volumes:
+      - .:/app:cached
+    command: ["python", "inference.py"]
+    restart: unless-stopped
